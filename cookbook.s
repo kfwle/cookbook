@@ -11,6 +11,8 @@
 	.equ	STDOUT,		1
 	.equ	ASCII_0,	48
 	.equ	ASCII_9,	57
+	.equ	ASCII_LF,	10
+	.equ	IN_MAX,		8
 
 # ------------------------------------------------------------
 #  Данные
@@ -22,7 +24,7 @@ menu:
 	.ascii	"==================================================\n"
 	.ascii	"                КНИГА РЕЦЕПТОВ\n"
 	.ascii	"==================================================\n"
-	.ascii	"Выбери рецепт (1-10):\n"
+	.ascii	"Выбери рецепт (1-10, 0 — выход), затем Enter:\n"
 	.ascii	"   1. Борщ                  6. Греческий салат\n"
 	.ascii	"   2. Солянка               7. Пельмени\n"
 	.ascii	"   3. Оливье                8. Шашлык\n"
@@ -32,7 +34,10 @@ menu:
 	.asciz	"> "
 
 msg_bad:
-	.asciz	"\n[!] Такого рецепта нет. Цифра от 0 до 10, 0 — выход.\n"
+	.asciz	"\n[!] Такого рецепта нет. Введи число от 1 до 10 или 0 для выхода.\n"
+
+msg_bye:
+	.asciz	"\nПриятного аппетита!\n"
 
 # ---- 1. Борщ ----
 rec1:
@@ -194,7 +199,7 @@ recipes:
 	.section .bss
 	.align 8
 inbuf:
-	.space	8
+	.space	16
 
 # ------------------------------------------------------------
 #  print_str(rdi = fd, rsi = указатель на строку с \0)
@@ -205,35 +210,68 @@ inbuf:
 	.type	_start, @function
 _start:
 	cld
-	xor	%r10, %r10			# счётчик выбора
 
 .Lloop:
 	mov	$STDOUT, %edi
 	lea	menu(%rip), %rsi
 	call	print_str
 
-	# читаем ровно один байт
+# читаем строку ввода по одному байту до '\n':
+	# одним read(2) забрать только одну строку нельзя — при пайпе
+	# в буфер попадёт сразу несколько строк
+	lea	inbuf(%rip), %r14
+	xor	%r13d, %r13d		# r13 = длина строки
+
+.Lgetc:
 	xor	%eax, %eax
 	mov	$STDIN, %edi
-	lea	inbuf(%rip), %rsi
+	lea	(%r14,%r13,1), %rsi
 	mov	$1, %edx
 	syscall
-	cmp	$1, %rax
-	jne	.Lquit			# EOF или ошибка -> выход
+	cmpq	$0, %rax
+	jl	.Lquit			# ошибка чтения -> выход
+	je	.Leof			# конец потока
+	movzbl	(%r14,%r13,1), %ecx
+	cmp	$ASCII_LF, %ecx
+	je	.Lparse			# строка кончена
+	inc	%r13
+	cmpq	$IN_MAX, %r13
+	jl	.Lgetc
+	jmp	.Lbad			# строка длиннее IN_MAX -> ошибка
 
-	movzbl	inbuf(%rip), %ecx	# символ
-	sub	$ASCII_0, %ecx		# '0' -> 0 ... '9' -> 9
-	cmp	$ASCII_9, %ecx
-	ja	.Lbad			# не цифра
+.Leof:
+	test	%r13, %r13
+	jnz	.Lparse			# накоплено что разобрать
+	jmp	.Lquit			# на пустой строке — просто выход
 
-	test	%ecx, %ecx
-	jnz	.Ldigit
-	mov	$9, %ecx			# '0' -> рецепт 10
-	jmp	.Lhave
-.Ldigit:
-	sub	$1, %ecx			# '1' -> 0 ... '9' -> 8
+.Lparse:
+	movzbl	(%r14), %r8d		# первый символ
+	movzbl	1(%r14), %r9d		# второй символ (используется при r13 >= 2)
 
 .Lhave:
+	mov	%r8d, %ecx			# первый символ
+	sub	$ASCII_0, %ecx		# '0' -> 0 ... '9' -> 9
+	cmp	$ASCII_9, %ecx
+	ja	.Lbad			# первый символ не цифра
+	test	%ecx, %ecx
+	jnz	.Lfirst
+	jmp	.Lquit			# '0' -> выход
+
+.Lfirst:
+	cmpq	$2, %r13			# номер однозначный?
+	jl	.Lsingle
+	mov	%r9d, %edx			# второй символ
+	sub	$ASCII_0, %edx
+	cmp	$ASCII_9, %edx
+	ja	.Lsingle			# это '\r' или мусор, не второй разряд
+	test	%edx, %edx
+	jnz	.Lbad			# "11", "12" ... -> недопустимо
+	mov	$9, %ecx			# "10" -> индекс 9
+	jmp	.Lindex
+.Lsingle:
+	sub	$1, %ecx			# '1' -> 0 ... '9' -> 8
+
+.Lindex:
 	lea	recipes(%rip), %rbx
 	mov	(%rbx,%rcx,8), %rsi
 	mov	$STDOUT, %edi
@@ -247,6 +285,9 @@ _start:
 	jmp	.Lloop
 
 .Lquit:
+	mov	$STDOUT, %edi
+	lea	msg_bye(%rip), %rsi
+	call	print_str
 	xor	%edi, %edi
 	mov	$SYS_exit, %eax
 	syscall
