@@ -31,8 +31,10 @@ CANDIDATES = [
     ("julia",     ["julia", "cookbook.jl"]),
     ("haskell",   [os.path.join(BUILD, "cb-hs")]),
     ("swift",     [os.path.join(BUILD, "cb-swift")]),
+    ("elixir",    ["elixir", "cookbook.ex"]),
     ("java",      ["java", "-Dfile.encoding=UTF-8", "-cp", ".", "Cookbook"]),
     ("kotlin",    ["java", "-jar", os.path.join(BUILD, "cb.kt.jar")]),
+    ("csharp",   ["dotnet", os.path.join(BUILD, "cs", "Cookbook.dll")]),
 ]
 
 SCENARIOS = [

@@ -110,9 +110,9 @@ MSG_BAD = "\n[!] Нет такого рецепта. Введи число от 
 MSG_PAUSE = "\n--- Нажми Enter, чтобы вернуться в меню ---\n"
 MSG_BYE = "\nПриятного аппетита!\n"
 
-# 1..LAST — номер рецепта, 0 — ошибка ввода
+# 1..LAST — номер рецепта, 0 — выход, -1 — ошибка ввода
 def parse(s)
-  return 0 if s.nil? || s.empty? || s.length > 3 || !s.match?(/\A\d+\z/)
+  return -1 if s.nil? || s.empty? || s.length > 3 || !s.match?(/\A\d+\z/)
 
   s.to_i
 end

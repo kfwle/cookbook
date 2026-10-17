@@ -528,33 +528,35 @@ fn parse(s: &str) -> Option<u32> {{
     Some(n)
 }}
 
-fn main() {{
+fn main() -> io::Result<()> {{
     let stdin = io::stdin();
     let mut stdout = io::stdout();
-    for line in stdin.lock().lines() {{
-        write!(stdout, "{{MENU}}").unwrap();
-        stdout.flush().unwrap();
+    let mut lines = stdin.lock().lines();
 
-        let Ok(line) = line else {{ break }};
-        let line = line.trim();
+    loop {{
+        write!(stdout, "{{MENU}}")?;
+        stdout.flush()?;
 
-        let Some(n) = parse(line) else {{
-            write!(stdout, "{{MSG_BAD}}").unwrap();
-            continue;
+        let line = match lines.next() {{
+            Some(Ok(l)) => l,
+            _ => break,
         }};
-        if n == 0 {{
-            break;
-        }}
-        if n as usize > LAST {{
-            write!(stdout, "{{MSG_BAD}}").unwrap();
-            continue;
-        }}
 
-        write!(stdout, "{{}}{{}}{{}}", RECIPES[n as usize - 1], MSG_PAUSE).unwrap();
-        stdout.flush().unwrap();
-        let _ = stdin.lock().lines().next();
+        match parse(line.trim()) {{
+            Some(0) => break,
+            Some(n) if (1..=LAST as u32).contains(&n) => {{
+                write!(stdout, "{{}}{{}}", RECIPES[n as usize - 1], MSG_PAUSE)?;
+                stdout.flush()?;
+                // следующая строка — подтверждение; None означает конец потока
+                if lines.next().is_none() {{
+                    break;
+                }}
+            }}
+            _ => write!(stdout, "{{MSG_BAD}}")?,
+        }}
     }}
-    write!(stdout, "{{MSG_BYE}}").unwrap();
+
+    write!(stdout, "{{MSG_BYE}}")
 }}
 '''
     w("cookbook.rs", t)
@@ -635,7 +637,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-public final class Cookbook {{
+// класс непубличный, чтобы имя файла совпадало с cookbook.* во всех
+// остальных реализациях — javac требует public class Cookbook в Cookbook.java
+final class Cookbook {{
     private static final int LAST = {LAST};
 
 {recs}
@@ -889,9 +893,9 @@ MSG_BAD = {lit_ruby(MSG_BAD)}
 MSG_PAUSE = {lit_ruby(MSG_PAUSE)}
 MSG_BYE = {lit_ruby(MSG_BYE)}
 
-# 1..LAST — номер рецепта, 0 — ошибка ввода
+# 1..LAST — номер рецепта, 0 — выход, -1 — ошибка ввода
 def parse(s)
-  return 0 if s.nil? || s.empty? || s.length > 3 || !s.match?(/\\A\\d+\\z/)
+  return -1 if s.nil? || s.empty? || s.length > 3 || !s.match?(/\\A\\d+\\z/)
 
   s.to_i
 end
@@ -930,17 +934,17 @@ const MSG_BAD = {lit(MSG_BAD)};
 const MSG_PAUSE = {lit(MSG_PAUSE)};
 const MSG_BYE = {lit(MSG_BYE)};
 
-/** 1..LAST — номер рецепта, 0 — ошибка ввода. */
+/** 1..LAST — номер рецепта, 0 — выход, -1 — ошибка ввода. */
 function parse(string $s): int
 {{
     $t = trim($s);
     if ($t === '' || strlen($t) > 3 || preg_match('/^\\\\d+$/', $t) !== 1) {{
-        return 0;
+        return -1;
     }}
     return (int) $t;
 }}
 
-function readLine(): ?string
+function read_stdin_line(): ?string
 {{
     $line = fgets(STDIN);
     if ($line === false) {{
@@ -951,7 +955,7 @@ function readLine(): ?string
 
 while (true) {{
     echo MENU;
-    $line = readLine();
+    $line = read_stdin_line();
     if ($line === null) {{
         break;
     }}
@@ -967,7 +971,7 @@ while (true) {{
 
     echo $recipes[$n - 1];
     echo MSG_PAUSE;
-    if (readLine() === null) {{
+    if (read_stdin_line() === null) {{
         break;
     }}
 }}
@@ -1078,7 +1082,7 @@ print $msg_bye;
 
 
 def gen_hs():
-    recs = qlist(TEXTS, 1, "recipes :: [String]", "", escf=lit)
+    recs = qlist(TEXTS, 2, "[", "]")
     t = f'''-- Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
 module Main (main) where
 
@@ -1090,8 +1094,7 @@ lastIndex :: Int
 lastIndex = {LAST}
 
 recipes :: [String]
-recipes =
-{recs}
+recipes = {recs}
 
 menu :: String
 menu = {lit(MENU)}
@@ -1201,10 +1204,10 @@ defmodule Cookbook do
 
 %%RECS%%
 
-  @menu "%%MENU%%"
-  @msg_bad "%%BAD%%"
-  @msg_pause "%%PAUSE%%"
-  @msg_bye "%%BYE%%"
+  @menu %%MENU%%
+  @msg_bad %%BAD%%
+  @msg_pause %%PAUSE%%
+  @msg_bye %%BYE%%
 
   # 1..@last — номер рецепта, nil — ошибка ввода
   defp parse(line) do

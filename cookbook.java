@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-public final class Cookbook {
+// класс непубличный, чтобы имя файла совпадало с cookbook.* во всех
+// остальных реализациях — javac требует public class Cookbook в Cookbook.java
+final class Cookbook {
     private static final int LAST = 100;
 
     private static final String[] RECIPES = {

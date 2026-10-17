@@ -32,6 +32,7 @@ RUBY     ?= ruby
 PHP      ?= php
 GHC      ?= ghc
 SWIFT    ?= swift
+SWIFTC   ?= swiftc
 ELIXIR   ?= elixir
 JULIA    ?= julia
 
@@ -65,7 +66,7 @@ kt:      ; @$(KOTLINC) cookbook.kt -include-runtime -d $(BUILD)/cookbook.jar && 
 rb:      ; @$(RUBY) cookbook.rb
 php:     ; @$(PHP)  cookbook.php
 hs:      ; @$(GHC)  -O cookbook.hs -o $(BUILD)/cookbook-hs
-swift:   ; @$(SWIFT) cookbook.swift -o $(BUILD)/cookbook-swift
+swift:   ; @$(SWIFTC) cookbook.swift -O -o $(BUILD)/cookbook-swift
 ex:      ; @$(ELIXIR) cookbook.ex
 jl:      ; @$(JULIA) cookbook.jl
 
@@ -84,7 +85,7 @@ check: $(BUILD)/cookbook
 	@command -v $(JAVAC)   >/dev/null && $(JAVAC) -encoding UTF-8 cookbook.java || true
 	@command -v $(KOTLINC) >/dev/null && $(KOTLINC) cookbook.kt -include-runtime -d $(BUILD)/cb.kt.jar || true
 	@command -v $(GHC)     >/dev/null && $(GHC) -O cookbook.hs -o $(BUILD)/cb-hs || true
-	@command -v $(SWIFT)   >/dev/null && $(SWIFT) cookbook.swift -o $(BUILD)/cb-swift || true
+	@command -v $(SWIFTC)  >/dev/null && $(SWIFTC) cookbook.swift -O -o $(BUILD)/cb-swift || true
 	@python3 tools/check.py $(BUILD)
 
 # --- генерация -------------------------------------------------------

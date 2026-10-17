@@ -111,17 +111,17 @@ const MSG_BAD = "\n[!] Нет такого рецепта. Введи число
 const MSG_PAUSE = "\n--- Нажми Enter, чтобы вернуться в меню ---\n";
 const MSG_BYE = "\nПриятного аппетита!\n";
 
-/** 1..LAST — номер рецепта, 0 — ошибка ввода. */
+/** 1..LAST — номер рецепта, 0 — выход, -1 — ошибка ввода. */
 function parse(string $s): int
 {
     $t = trim($s);
     if ($t === '' || strlen($t) > 3 || preg_match('/^\\d+$/', $t) !== 1) {
-        return 0;
+        return -1;
     }
     return (int) $t;
 }
 
-function readLine(): ?string
+function read_stdin_line(): ?string
 {
     $line = fgets(STDIN);
     if ($line === false) {
@@ -132,7 +132,7 @@ function readLine(): ?string
 
 while (true) {
     echo MENU;
-    $line = readLine();
+    $line = read_stdin_line();
     if ($line === null) {
         break;
     }
@@ -148,7 +148,7 @@ while (true) {
 
     echo $recipes[$n - 1];
     echo MSG_PAUSE;
-    if (readLine() === null) {
+    if (read_stdin_line() === null) {
         break;
     }
 }

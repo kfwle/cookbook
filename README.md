@@ -34,15 +34,15 @@ python3 cookbook.py
 | Lua | `cookbook.lua` | да |
 | Perl | `cookbook.pl` | да |
 | Zig | `cookbook.zig` | да |
-| C# | `cookbook.cs` | нет |
-| Rust | `cookbook.rs` | нет |
-| Java | `cookbook.java` | нет |
-| Kotlin | `cookbook.kt` | нет |
-| Ruby | `cookbook.rb` | нет |
-| PHP | `cookbook.php` | нет |
-| Haskell | `cookbook.hs` | нет |
-| Swift | `cookbook.swift` | нет |
-| Elixir | `cookbook.ex` | нет |
+| C# | `cookbook.cs` | да |
+| Rust | `cookbook.rs` | да |
+| Java | `cookbook.java` | да |
+| Kotlin | `cookbook.kt` | да |
+| Ruby | `cookbook.rb` | да |
+| PHP | `cookbook.php` | да |
+| Haskell | `cookbook.hs` | нет — см. ниже |
+| Swift | `cookbook.swift` | да |
+| Elixir | `cookbook.ex` | да |
 | Julia | `cookbook.jl` | да |
 
 Ассемблерная версия идёт без libc — только системные вызовы
@@ -53,10 +53,11 @@ python3 cookbook.py
 ввода (рецепт, пауза, ошибка, выход, пустые строки, число вне
 диапазона).
 
-Непроверенные версии написаны по тем же правилам, но собрать их
-здесь нечем — тулчейна нет в системе, а ставить через pacman без
-root нельзя. Их код стоит прогнать через `make check` на машине,
-где нужный компилятор есть.
+Проверено **19 из 20** — все, кроме Haskell. Причина не в коде:
+GHC 9.6.7 в системе доустановлен криво, каталога с интерфейсами
+пакета `base` просто нет, поэтому не компилируется вообще ничего.
+Сам `cookbook.hs` синтаксически разбирается без ошибок. Лечится
+переустановкой пакета `ghc`.
 
 TypeScript требует `npm i` (ставит typescript и @types/node) —
 `make ts` делает это сам.

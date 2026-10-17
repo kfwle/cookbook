@@ -5,6 +5,6 @@ __pycache__/
 *.class
 *.jar
 node_modules/
-cookbook.csproj/
 bin/
 obj/
+Cookbook.class

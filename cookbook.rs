@@ -125,31 +125,33 @@ fn parse(s: &str) -> Option<u32> {
     Some(n)
 }
 
-fn main() {
+fn main() -> io::Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
-    for line in stdin.lock().lines() {
-        write!(stdout, "{MENU}").unwrap();
-        stdout.flush().unwrap();
+    let mut lines = stdin.lock().lines();
 
-        let Ok(line) = line else { break };
-        let line = line.trim();
+    loop {
+        write!(stdout, "{MENU}")?;
+        stdout.flush()?;
 
-        let Some(n) = parse(line) else {
-            write!(stdout, "{MSG_BAD}").unwrap();
-            continue;
+        let line = match lines.next() {
+            Some(Ok(l)) => l,
+            _ => break,
         };
-        if n == 0 {
-            break;
-        }
-        if n as usize > LAST {
-            write!(stdout, "{MSG_BAD}").unwrap();
-            continue;
-        }
 
-        write!(stdout, "{}{}{}", RECIPES[n as usize - 1], MSG_PAUSE).unwrap();
-        stdout.flush().unwrap();
-        let _ = stdin.lock().lines().next();
+        match parse(line.trim()) {
+            Some(0) => break,
+            Some(n) if (1..=LAST as u32).contains(&n) => {
+                write!(stdout, "{}{}", RECIPES[n as usize - 1], MSG_PAUSE)?;
+                stdout.flush()?;
+                // следующая строка — подтверждение; None означает конец потока
+                if lines.next().is_none() {
+                    break;
+                }
+            }
+            _ => write!(stdout, "{MSG_BAD}")?,
+        }
     }
-    write!(stdout, "{MSG_BYE}").unwrap();
+
+    write!(stdout, "{MSG_BYE}")
 }
