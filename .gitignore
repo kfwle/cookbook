@@ -1,2 +1,9 @@
+build/
 cookbook
 *.o
+__pycache__/
+*.class
+*.jar
+cookbook.csproj/
+bin/
+obj/
