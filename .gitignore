@@ -7,4 +7,6 @@ __pycache__/
 node_modules/
 bin/
 obj/
-Cookbook.class
+erl_crash.dump
+nimcache/
+*.beam

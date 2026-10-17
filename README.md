@@ -62,6 +62,29 @@ GHC 9.6.7 в системе доустановлен криво, каталог�
 TypeScript требует `npm i` (ставит typescript и @types/node) —
 `make ts` делает это сам.
 
+## Вторая партия
+
+| Язык | Файл | Компилятор | Проверено |
+|---|---|---|---|
+| Erlang | `cookbook.erl` | `erlc` | да |
+| F# | `cookbook.fsx` | `dotnet fsi` | да |
+| Scheme | `cookbook.scm` | `guile` | да |
+| Tcl | `cookbook.tcl` | `tclsh` | нет |
+| Crystal | `cookbook.cr` | `crystal` | нет |
+| Fortran | `cookbook.f90` | `gfortran` | нет |
+| Nim | `cookbook.nim` | `nim` | нет |
+| Common Lisp | `cookbook.lisp` | `sbcl` | нет |
+| Clojure | `cookbook.clj` | `clojure` | нет |
+| OCaml | `cookbook.ml` | `ocaml` | нет |
+| Groovy | `cookbook.groovy` | `groovy` | нет |
+| Ada | `cookbook.adb` | `gnatmake` | нет |
+| D | `cookbook.d` | `gdc` | нет |
+| Pascal | `cookbook.pas` | `fpc` | нет |
+| Dart | `cookbook.dart` | `dart` | нет |
+
+Тулчейны для непроверенных ставятся одним списком — см. README в
+разделе «Сборка».
+
 ## Как это устроено
 
 ```

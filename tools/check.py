@@ -35,6 +35,23 @@ CANDIDATES = [
     ("java",      ["java", "-Dfile.encoding=UTF-8", "-cp", ".", "Cookbook"]),
     ("kotlin",    ["java", "-jar", os.path.join(BUILD, "cb.kt.jar")]),
     ("csharp",   ["dotnet", os.path.join(BUILD, "cs", "Cookbook.dll")]),
+    ("erlang",   ["erl", "-noshell", "-pa", BUILD, "-eval",
+                  "cookbook:main(), init:stop()."]),
+    ("fsharp",   ["dotnet", "fsi", "cookbook.fsx"]),
+    ("scheme",   ["guile", "--no-auto-compile", "cookbook.scm"]),
+    ("tcl",      ["tclsh", "cookbook.tcl"]),
+    ("crystal",  ["crystal", "cookbook.cr"]),
+    ("fortran",  [os.path.join(BUILD, "cb-f90")]),
+    ("nim",      ["nim", "r", "-d:release", "-o:" + os.path.join(BUILD, "cb-nim"),
+                  "cookbook.nim"]),
+    ("lisp",     ["sbcl", "--script", "cookbook.lisp"]),
+    ("clojure",  ["java", "-cp", ".", "clojure.main", "cookbook.clj"]),
+    ("ocaml",    ["ocaml", "cookbook.ml"]),
+    ("groovy",   ["groovy", "cookbook.groovy"]),
+    ("ada",      [os.path.join(BUILD, "cb-ada")]),
+    ("dlang",    [os.path.join(BUILD, "cb-d")]),
+    ("pascal",   [os.path.join(BUILD, "cb-pas")]),
+    ("dart",     ["dart", "cookbook.dart"]),
 ]
 
 SCENARIOS = [
