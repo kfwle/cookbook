@@ -53,7 +53,7 @@ py:      ; @$(PYTHON)  cookbook.py
 go:      ; @$(GO) build -o $(BUILD)/cookbook-go  cookbook.go
 c:       ; @$(CC)  -std=c11   -O2 -o $(BUILD)/cookbook-c  cookbook.c
 cpp:     ; @$(CXX) -std=c++17 -O2 -o $(BUILD)/cookbook-cpp cookbook.cpp
-ts:      ; @$(TSC) cookbook.ts
+ts:      ; @npm i --silent --no-fund --no-audit && $(TSC) -p tsconfig.json
 js:      ; @$(NODE) cookbook.js
 lua:     ; @$(LUA)  cookbook.lua
 perl:    ; @$(PERL) cookbook.pl
@@ -78,7 +78,7 @@ check: $(BUILD)/cookbook
 	@command -v $(CXX)     >/dev/null && $(CXX) -std=c++17 -O2 -o $(BUILD)/cb-cpp cookbook.cpp || true
 	@command -v $(GO)      >/dev/null && $(GO) build -o $(BUILD)/cb-go  cookbook.go || true
 	@command -v $(ZIG)     >/dev/null && $(ZIG) build-exe cookbook.zig -O ReleaseSafe -femit-bin=$(BUILD)/cb-zig || true
-	@command -v $(TSC)     >/dev/null && $(TSC) cookbook.ts --outDir $(BUILD)/ts || true
+	@command -v $(TSC)     >/dev/null && $(TSC) -p tsconfig.json || true
 	@command -v $(DOTNET)  >/dev/null && $(DOTNET) build cookbook.csproj -o $(BUILD)/cs >/dev/null || true
 	@command -v $(RUSTC)   >/dev/null && $(RUSTC) -O cookbook.rs -o $(BUILD)/cb-rs || true
 	@command -v $(JAVAC)   >/dev/null && $(JAVAC) -encoding UTF-8 cookbook.java || true

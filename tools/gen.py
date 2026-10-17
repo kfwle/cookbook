@@ -1281,37 +1281,36 @@ const MSG_PAUSE = {lit(MSG_PAUSE)}
 const MSG_BYE = {lit(MSG_BYE)}
 
 # 1..LAST — номер рецепта, nothing — ошибка ввода
-function parse(s::String)
+function parse_num(s::AbstractString)
     isempty(s) && return nothing
     length(s) > 3 && return nothing
     all(isdigit, s) || return nothing
-    return parse(Int, s)
+    return Base.parse(Int, s)
 end
 
 function main()
     while true
         print(MENU)
-        line = readline()
-        if line === nothing
-            print(MSG_BYE)
-            break
-        end
+        # На конце потока readline() отдаёт "" (а не nothing), поэтому EOF
+        # ловим eof() ДО чтения — иначе пустой ввод даёт бесконечный цикл.
+        eof(stdin) && (print(MSG_BYE); break)
 
-        n = parse(strip(line))
+        n = parse_num(strip(readline()))
         if n === nothing
             print(MSG_BAD)
             continue
-        elseif n == 0
+        elseif n == 0            # 0 — выход, проверяем раньше диапазона
             print(MSG_BYE)
             break
-        elseif n > LAST
+        elseif n < 1 || n > LAST
             print(MSG_BAD)
             continue
         end
 
         print(RECIPES[n])
         print(MSG_PAUSE)
-        readline() === nothing && (print(MSG_BYE); break)
+        eof(stdin) && (print(MSG_BYE); break)
+        readline()
     end
 end
 

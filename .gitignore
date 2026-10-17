@@ -4,6 +4,7 @@ cookbook
 __pycache__/
 *.class
 *.jar
+node_modules/
 cookbook.csproj/
 bin/
 obj/
