@@ -1,6 +1,4 @@
 ;; Книга рецептов — 100 блюд. Сгенерировано tools/gen.py.
-(ns cookbook)
-
 (def last-idx 100)
 
 (def recipes

@@ -53,37 +53,41 @@ python3 cookbook.py
 ввода (рецепт, пауза, ошибка, выход, пустые строки, число вне
 диапазона).
 
-Проверено **19 из 20** — все, кроме Haskell. Причина не в коде:
-GHC 9.6.7 в системе доустановлен криво, каталога с интерфейсами
-пакета `base` просто нет, поэтому не компилируется вообще ничего.
-Сам `cookbook.hs` синтаксически разбирается без ошибок. Лечится
-переустановкой пакета `ghc`.
+Проверено **31 из 35** — все, кроме Haskell, Ada, D и Dart.
 
 TypeScript требует `npm i` (ставит typescript и @types/node) —
 `make ts` делает это сам.
 
 ## Вторая партия
 
-| Язык | Файл | Компилятор | Проверено |
+Проверены побайтово против ассемблерного эталона:
+
+| Язык | Файл | Чем собирается | Статус |
 |---|---|---|---|
 | Erlang | `cookbook.erl` | `erlc` | да |
 | F# | `cookbook.fsx` | `dotnet fsi` | да |
 | Scheme | `cookbook.scm` | `guile` | да |
-| Tcl | `cookbook.tcl` | `tclsh` | нет |
-| Crystal | `cookbook.cr` | `crystal` | нет |
-| Fortran | `cookbook.f90` | `gfortran` | нет |
-| Nim | `cookbook.nim` | `nim` | нет |
-| Common Lisp | `cookbook.lisp` | `sbcl` | нет |
-| Clojure | `cookbook.clj` | `clojure` | нет |
-| OCaml | `cookbook.ml` | `ocaml` | нет |
-| Groovy | `cookbook.groovy` | `groovy` | нет |
-| Ada | `cookbook.adb` | `gnatmake` | нет |
-| D | `cookbook.d` | `gdc` | нет |
-| Pascal | `cookbook.pas` | `fpc` | нет |
-| Dart | `cookbook.dart` | `dart` | нет |
+| Tcl | `cookbook.tcl` | `tclsh` | да |
+| Crystal | `cookbook.cr` | `crystal` | да |
+| Fortran | `cookbook.f90` | `gfortran` | да |
+| Nim | `cookbook.nim` | `nim` | да |
+| Common Lisp | `cookbook.lisp` | `sbcl` | да |
+| Clojure | `cookbook.clj` | `clojure` | да |
+| OCaml | `cookbook.ml` | `ocaml` | да |
+| Groovy | `cookbook.groovy` | `groovy` | да |
+| Pascal | `cookbook.pas` | `fpc` | да |
+| Ada | `cookbook.adb` | `gnatmake` | нет — gnat не установлен |
+| D | `cookbook.d` | `gdc` | нет — gdc не установлен |
+| Dart | `cookbook.dart` | `dart` | нет — dart не установлен |
 
-Тулчейны для непроверенных ставятся одним списком — см. README в
-разделе «Сборка».
+Не хватает тулчейнов для четырёх языков:
+
+```bash
+sudo pacman -S ghc-static gcc-ada gcc-d dart
+```
+
+Haskell, Ada, D и Dart написаны по тем же правилам, но собрать их
+здесь нечем — компиляторы не установлены.
 
 ## Как это устроено
 

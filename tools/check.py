@@ -42,10 +42,9 @@ CANDIDATES = [
     ("tcl",      ["tclsh", "cookbook.tcl"]),
     ("crystal",  ["crystal", "cookbook.cr"]),
     ("fortran",  [os.path.join(BUILD, "cb-f90")]),
-    ("nim",      ["nim", "r", "-d:release", "-o:" + os.path.join(BUILD, "cb-nim"),
-                  "cookbook.nim"]),
+    ("nim",      [os.path.join(BUILD, "cb-nim")]),
     ("lisp",     ["sbcl", "--script", "cookbook.lisp"]),
-    ("clojure",  ["java", "-cp", ".", "clojure.main", "cookbook.clj"]),
+    ("clojure",  ["clojure", "cookbook.clj"]),
     ("ocaml",    ["ocaml", "cookbook.ml"]),
     ("groovy",   ["groovy", "cookbook.groovy"]),
     ("ada",      [os.path.join(BUILD, "cb-ada")]),
@@ -65,8 +64,10 @@ SCENARIOS = [
 
 
 def run(cmd, data):
+    """Возвращает только stdout: предупреждения инструментов в stderr
+    не должны влиять на сравнение с эталоном."""
     p = subprocess.run(cmd, input=data, stdout=subprocess.PIPE,
-                       stderr=subprocess.STDOUT, cwd=ROOT)
+                       stderr=subprocess.PIPE, cwd=ROOT)
     return p.stdout
 
 

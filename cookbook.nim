@@ -1,4 +1,6 @@
 # Книга рецептов — 100 блюд. Сгенерировано tools/gen.py.
+import std/strutils
+
 const LAST = 100
 
 const recipes = [
@@ -111,8 +113,9 @@ const msgBye = "\nПриятного аппетита!\n"
 const EOF_SENTINEL = "\x01eof"
 
 proc readLine(): string =
-  let l = stdin.readLine()
-  if l.len == 0: EOF_SENTINEL else: l
+  ## пустая строка и конец файла дают от readLine одинаковый "",
+  ## поэтому конец потока проверяем заранее
+  if stdin.endOfFile: EOF_SENTINEL else: stdin.readLine()
 
 proc parse(line: string): int =
   let s = line.strip()

@@ -26,6 +26,38 @@ NAMES = ["erl", "fsx", "scm", "tcl", "cr", "f90", "nim", "lisp",
          "clj", "ml", "groovy", "adb", "d", "pas", "dart"]
 
 
+def f90_str(x):
+    """Выражение Fortran: в gfortran литерал не может переноситься на
+    следующую строку, поэтому склеиваем части через nl = achar(10).
+    Экранировать нужно только одинарную кавычку."""
+    parts = ["'" + q.replace("'", "''") + "'" for q in x.split(chr(10))]
+    return " // nl // ".join(parts)
+
+
+def pas_str(x):
+    """Выражение Free Pascal: этот компилятор не принимает двойные
+    кавычки, а \\n не является escape, поэтому строки склеиваем через #10."""
+    parts = ["'" + q.replace("'", "''") + "'" for q in x.split(chr(10))]
+    return " + #10 + ".join(parts)
+
+
+def lit_ml(x):
+    """Литерал с настоящими переводами строк — для Lisp и Pascal,
+    где escape \\n не означает перевод строки."""
+    out = x.replace("\\", "\\\\").replace('"', '\\"')
+    return '"' + out + '"'
+
+
+def lit_tcl(x):
+    """Литерал для Tcl: внутри двойных кавычек [ ... ] — подстановка команды,
+    поэтому квадратные скобки приходится экранировать."""
+    out = x.replace("\\", "\\\\")
+    out = out.replace("[", "\[").replace("]", "\]")
+    out = out.replace('"', '\"')
+    out = out.replace("\r", "\\r").replace("\n", "\\n")
+    return '"' + out + '"'
+
+
 def gen_erl():
     recs = qlist(TEXTS, 4, "recipes() ->\n    [", "].", escf=lit)
     recs = "\n".join('    ' + lit(TEXTS[i]) + ("," if i + 1 < LAST else "")
@@ -199,7 +231,7 @@ def gen_scm():
 
 
 def gen_tcl():
-    recs = "\n".join('    ' + lit(TEXTS[i]) + ("" if i + 1 == LAST else "")
+    recs = "\n".join('    ' + lit_tcl(TEXTS[i]) + ("" if i + 1 == LAST else " \\")
                      for i in range(LAST))
     w("cookbook.tcl", f"""# Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
 set LAST {LAST}
@@ -207,10 +239,10 @@ set LAST {LAST}
 set recipes [list \\
 {recs}]
 
-set menu {lit(MENU)}
-set msg_bad {lit(MSG_BAD)}
-set msg_pause {lit(MSG_PAUSE)}
-set msg_bye {lit(MSG_BYE)}
+set menu {lit_tcl(MENU)}
+set msg_bad {lit_tcl(MSG_BAD)}
+set msg_pause {lit_tcl(MSG_PAUSE)}
+set msg_bye {lit_tcl(MSG_BYE)}
 
 # -1 на конце потока
 proc read_line {{}} {{
@@ -227,26 +259,26 @@ proc parse {{s}} {{
 }}
 
 proc loop {{}} {{
-    puts -nonewline $menu
+    puts -nonewline $::menu
     set s [read_line]
     if {{$s == -1}} {{
-        puts -nonewline $msg_bye
+        puts -nonewline $::msg_bye
         return
     }}
     set n [parse $s]
     if {{$n == 0}} {{
-        puts -nonewline $msg_bye
+        puts -nonewline $::msg_bye
         return
     }}
-    if {{$n < 1 || $n > $LAST}} {{
-        puts -nonewline $msg_bad
+    if {{$n < 1 || $n > $::LAST}} {{
+        puts -nonewline $::msg_bad
         loop
         return
     }}
-    puts -nonewline [lindex $recipes [expr {{$n - 1}}]]
-    puts -nonewline $msg_pause
+    puts -nonewline [lindex $::recipes [expr {{$n - 1}}]]
+    puts -nonewline $::msg_pause
     if {{[read_line] == -1}} {{
-        puts -nonewline $msg_bye
+        puts -nonewline $::msg_bye
         return
     }}
     loop
@@ -271,7 +303,7 @@ MSG_BYE = {lit(MSG_BYE)}
 def parse(line : String) : Int32?
   s = line.strip
   return nil if s.empty? || s.size > 3
-  return nil unless s.each_char.all?(&.ascii_number? >= 0)
+  return nil unless s.each_char.all?(&.in?('0'..'9'))
   s.to_i32
 end
 
@@ -287,8 +319,10 @@ loop do
   if n.nil?
     print MSG_BAD
     next
+  elsif n == 0
+    print MSG_BYE
+    break
   end
-  break if n == 0
   if n < 1 || n > LAST
     print MSG_BAD
     next
@@ -305,29 +339,32 @@ end
 
 
 def gen_f90():
-    recs = "\n".join("  recipes(%d) = %s" % (i + 1, lit(TEXTS[i])) for i in range(LAST))
+    recs = "\n".join("  recipes(%d) = %s" % (i + 1, f90_str(TEXTS[i])) for i in range(LAST))
     w("cookbook.f90", f"""! Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
 program cookbook
   implicit none
+  character(len=1), parameter :: nl = achar(10)
   integer, parameter :: LAST = {LAST}
   character(len=2048) :: recipes({LAST})
   character(len=4096) :: menu
   character(len=256) :: msg_bad, msg_pause, msg_bye, line
   integer :: n, ios, i, k, c, val
+  integer :: menu_len
 
-  recipes = (/ {lit(TEXTS[0])}, &
-{recs[recs.index(chr(10)) + 1:]} /)
-  menu = {lit(MENU)}
-  msg_bad = {lit(MSG_BAD)}
-  msg_pause = {lit(MSG_PAUSE)}
-  msg_bye = {lit(MSG_BYE)}
+
+  {recs}
+  menu = {f90_str(MENU)}
+  msg_bad = {f90_str(MSG_BAD)}
+  msg_pause = {f90_str(MSG_PAUSE)}
+  msg_bye = {f90_str(MSG_BYE)}
+  menu_len = len_trim(menu) + 1
 
   do
-    write(*, '(A)', advance='no') trim(menu)
+    write(*, '(A)', advance='no') menu(1:menu_len)
     flush(6)
     read(*, '(A)', iostat=ios) line
     if (ios /= 0) then
-      write(*, '(A)') trim(msg_bye)
+      write(*, '(A)') msg_bye(1:efflen(msg_bye))
       stop
     end if
 
@@ -348,23 +385,39 @@ program cookbook
     end if
 
     if (n == -1) then
-      write(*, '(A)') trim(msg_bad)
+      write(*, '(A)') msg_bad(1:efflen(msg_bad))
     else if (n == 0) then
-      write(*, '(A)') trim(msg_bye)
+      write(*, '(A)') msg_bye(1:efflen(msg_bye))
       stop
     else if (n > LAST) then
-      write(*, '(A)') trim(msg_bad)
+      write(*, '(A)') msg_bad(1:efflen(msg_bad))
     else
-      write(*, '(A)') trim(recipes(n))
-      write(*, '(A)') trim(msg_pause)
+      write(*, '(A)') recipes(n)(1:efflen(recipes(n)))
+      write(*, '(A)') msg_pause(1:efflen(msg_pause))
       flush(6)
       read(*, '(A)', iostat=ios) line
       if (ios /= 0) then
-        write(*, '(A)') trim(msg_bye)
+        write(*, '(A)') msg_bye(1:efflen(msg_bye))
         stop
       end if
     end if
   end do
+
+contains
+
+  integer function efflen(s)
+    character(len=*), intent(in) :: s
+    integer :: m
+    m = len_trim(s)
+    do while (m >= 1)
+      if (s(m:m) == ' ' .or. iachar(s(m:m)) == 10) then
+        m = m - 1
+      else
+        exit
+      end if
+    end do
+    efflen = m
+  end function efflen
 
 end program cookbook
 """)
@@ -373,6 +426,8 @@ end program cookbook
 def gen_nim():
     recs = qlist(TEXTS, 2, "const recipes = [", "]", escf=lit)
     w("cookbook.nim", f"""# Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
+import std/strutils
+
 const LAST = {LAST}
 
 {recs}
@@ -385,8 +440,9 @@ const msgBye = {lit(MSG_BYE)}
 const EOF_SENTINEL = "\\x01eof"
 
 proc readLine(): string =
-  let l = stdin.readLine()
-  if l.len == 0: EOF_SENTINEL else: l
+  ## пустая строка и конец файла дают от readLine одинаковый "",
+  ## поэтому конец потока проверяем заранее
+  if stdin.endOfFile: EOF_SENTINEL else: stdin.readLine()
 
 proc parse(line: string): int =
   let s = line.strip()
@@ -419,7 +475,7 @@ while true:
 
 
 def gen_lisp():
-    recs = "\n".join('   ' + lit(TEXTS[i]) + ("" if i + 1 == LAST else "")
+    recs = "\n".join('   ' + lit_ml(TEXTS[i]) + ("" if i + 1 == LAST else "")
                      for i in range(LAST))
     w("cookbook.lisp", f""";;; Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
 (defparameter *last* {LAST})
@@ -428,23 +484,24 @@ def gen_lisp():
   (list
 {recs}))
 
-(defparameter *menu* {lit(MENU)})
-(defparameter *msg-bad* {lit(MSG_BAD)})
-(defparameter *msg-pause* {lit(MSG_PAUSE)})
-(defparameter *msg-bye* {lit(MSG_BYE)})
+(defparameter *menu* {lit_ml(MENU)})
+(defparameter *msg-bad* {lit_ml(MSG_BAD)})
+(defparameter *msg-pause* {lit_ml(MSG_PAUSE)})
+(defparameter *msg-bye* {lit_ml(MSG_BYE)})
 
-(defun read-line ()
+(defun read-stdin-line ()
   (let ((l (read-line *standard-input* nil nil)))
-    (when (stringp l) (string-trim l))))
+    (when (stringp l) (string-trim " \t\n\r" l))))
 
 (defun parse (s)
   (when (and (stringp s)
              (> (length s) 0)
              (<= (length s) 3)
-             (every #'(char<= #\9 (char>= #\0)) (coerce s 'list)))
+             (every (lambda (c) (let ((k (char-code c))) (and (>= k 48) (<= k 57))))
+         (coerce s 'list)))
     (parse-integer s)))
 
-(defun loop ()
+(defun cook-loop ()
   (princ *menu*)
   (finish-output)
   (let ((s (read-stdin-line)))
@@ -452,14 +509,14 @@ def gen_lisp():
         (progn (princ *msg-bye*) (finish-output))
         (let ((n (parse s)))
           (cond
-            ((null n) (princ *msg-bad*) (finish-output) (loop))
+            ((null n) (princ *msg-bad*) (finish-output) (cook-loop))
             ((= n 0) (princ *msg-bye*) (finish-output))
-            ((> n *last*) (princ *msg-bad*) (finish-output) (loop))
+            ((> n *last*) (princ *msg-bad*) (finish-output) (cook-loop))
             (t (princ (nth (1- n) *recipes*))
                (princ *msg-pause*)
                (finish-output)
-               (if (read-line) (loop) (progn (princ *msg-bye*) (finish-output)))))))))
-(loop)
+               (if (read-stdin-line) (cook-loop) (progn (princ *msg-bye*) (finish-output)))))))))
+(cook-loop)
 """)
 
 
@@ -509,7 +566,7 @@ def gen_clj():
 
 
 def gen_ml():
-    recs = qlist(TEXTS, 2, "let recipes = [|", "|]", escf=lit)
+    recs = qlist(TEXTS, 2, "let recipes = [|", "|]", sep="; ", escf=lit)
     w("cookbook.ml", f"""(* Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py. *)
 let last = {LAST}
 
@@ -555,20 +612,22 @@ let () = loop ()
 
 
 def gen_groovy():
-    recs = qlist(TEXTS, 2, "def recipes = [", "]", escf=lit)
+    recs = qlist(TEXTS, 2, "@Field def recipes = [", "]", escf=lit)
     w("cookbook.groovy", f"""// Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py.
-def LAST = {LAST}
+import groovy.transform.Field
+
+@Field def LAST = {LAST}
 
 {recs}
 
-def MENU = {lit(MENU)}
-def MSG_BAD = {lit(MSG_BAD)}
-def MSG_PAUSE = {lit(MSG_PAUSE)}
-def MSG_BYE = {lit(MSG_BYE)}
+@Field def MENU = {lit(MENU)}
+@Field def MSG_BAD = {lit(MSG_BAD)}
+@Field def MSG_PAUSE = {lit(MSG_PAUSE)}
+@Field def MSG_BYE = {lit(MSG_BYE)}
 
-def reader = new BufferedReader(new InputStreamReader(System.in, "UTF-8"))
+@Field def reader = new BufferedReader(new InputStreamReader(System.in, "UTF-8"))
 
-Integer parse(String line) {{
+static Integer parse(String line) {{
     def t = line?.trim()
     if (!t || t.length() == 0 || t.length() > 3) return -1
     if (!(t ==~ /[0-9]+/)) return -1
@@ -753,20 +812,21 @@ void main() {{
 
 
 def gen_pas():
-    recs = ",\n".join("  " + lit(TEXTS[i]) for i in range(LAST))
+    recs = ",\n".join("  " + pas_str(TEXTS[i]) for i in range(LAST))
     w("cookbook.pas", f"""{{$mode delphi$}}
 {{$H+}}
 {{ Книга рецептов — {LAST} блюд. Сгенерировано tools/gen.py. }}
 program Cookbook;
+uses SysUtils;
 const
   LAST = {LAST};
   RECIPES: array[1..LAST] of AnsiString = (
 {recs}
 );
-  MENU = {lit(MENU)};
-  MSG_BAD = {lit(MSG_BAD)};
-  MSG_PAUSE = {lit(MSG_PAUSE)};
-  MSG_BYE = {lit(MSG_BYE)};
+  MENU = {pas_str(MENU)};
+  MSG_BAD = {pas_str(MSG_BAD)};
+  MSG_PAUSE = {pas_str(MSG_PAUSE)};
+  MSG_BYE = {pas_str(MSG_BYE)};
 
 var
   Line: AnsiString;

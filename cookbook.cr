@@ -111,7 +111,7 @@ MSG_BYE = "\nПриятного аппетита!\n"
 def parse(line : String) : Int32?
   s = line.strip
   return nil if s.empty? || s.size > 3
-  return nil unless s.each_char.all?(&.ascii_number? >= 0)
+  return nil unless s.each_char.all?(&.in?('0'..'9'))
   s.to_i32
 end
 
@@ -127,8 +127,10 @@ loop do
   if n.nil?
     print MSG_BAD
     next
+  elsif n == 0
+    print MSG_BYE
+    break
   end
-  break if n == 0
   if n < 1 || n > LAST
     print MSG_BAD
     next
